@@ -35,13 +35,28 @@ class TensorDot(Operation):
 
 
 class TensorAdd(Operation):
-    '''tensor addition operation.'''
+    '''tensor addition operation.
+    given a list of Tensor objects with a common shape, adds them up.'''
 
     def __init__(self):
         super(TensorAdd, self).__init__(name="Add")
 
     def forward_call(self, summands):
-        '''summands should be a list of ndarrays, all with the same dimensions.'''
+        '''summands should be a list of ndarrays, all with the same dimensions.
+        args:
+            summands: list of Tensors all with same shape.
+        returns:
+            numpy array of same shape as input Tensors containing the sum
+            of the input tensors.
+            
+        Example: 
+        if  summands = [A, B, C] where
+        A.data = np.array([1, 2, 0])
+        B.data = np.array([2, 3, 10])
+        C.data = np.array([3, -2, 90]),
+        
+        the return value should be:
+        np.array([6, 3, 100]).'''
 
         assert len(summands) > 0, "Add called with no inputs!"
         shape = summands[0].data.shape
@@ -49,11 +64,22 @@ class TensorAdd(Operation):
             assert summand.data.shape == shape, "Shape mismatch in Add: shapes: {}".format(
                 [summand.data.shape for summand in summands])
 
+        ### YOUR CODE HERE ###
         self.parents = summands
-
         return functools.reduce(lambda x, y: x.data + y.data, summands)
 
     def backward_call(self, downstream_grad):
+        '''
+        backward functions for tensor addition.
+        args:
+            downstream_grad: numpy array containing gradient of final
+            computation output with respect to the output of this operation.
+        returns: list of  numpy arrays such that ith entry of returned list
+            is gradient of final computation output with respect to ith entry
+            of the input list to forward_call.'''
+
+        ### YOUR CODE HERE ###
+
         return [downstream_grad for _ in self.parents]
 
 class TensorMultiply(Operation):
@@ -63,12 +89,31 @@ class TensorMultiply(Operation):
         super(TensorMultiply, self).__init__(name="Multiply")
 
     def forward_call(self, multiplicands):
-        '''inputs should be a list of ndarrays, all with the same dimensions.'''
+        '''inputs should be a list of Tensors, all with the same dimensions.
+        Like all forward_call implementations, this function should also
+        set self.parents appriopriately.
+        args:
+            multiplicands: list of Tensors all of same shape.
+        returns:
+            a numpy array of the same shape as all the input Tensors that is
+            equal to all the Tensors multiplied together entry-wise.
+        
+        Example:
+        if multiplicands = [A, B, C] where
+        A.data = np.array([1, 2, 0])
+        B.data = np.array([2, 3, 10])
+        C.data = np.array([3, -2, 90]),
+        
+        the return value should be:
+        np.array([6, -12, 0]).
+        '''
 
         assert len(multiplicands) > 0, "Multiply called with no inputs!"
         shape = multiplicands[0].data.shape
         for multiplicand in multiplicands:
             assert multiplicand.data.shape == shape, "Shape mismatch in Multiply!"
+
+        ### YOUR CODE HERE ###
 
         self.num_inputs = len(multiplicands)
         self.output = functools.reduce(
@@ -79,6 +124,9 @@ class TensorMultiply(Operation):
         return self.output
 
     def backward_call(self, downstream_grad):
+
+
+        ### YOUR CODE HERE ###
 
         # gradient of abcd with respect to b is acd
         # cannot just do abcd/b because of potential divide by zero.
@@ -91,6 +139,141 @@ class TensorMultiply(Operation):
             upstream_grads.append(product)
 
         return upstream_grads
+
+
+class ScalarMultiply(Operation):
+    '''multiplication by a scalar.'''
+
+    def __init__(self):
+        super(ScalarMultiply, self).__init__(name="Scalar Multiply")
+
+    def forward_call(self, scalar, tensor):
+        '''
+        multiplies a tensor by a scalar.
+        args:
+            scalar: a Tensor of shape (1) (i.e. np.shape(scalar.data) is (1).
+            tensor: a Tensor of arbitrary shape.
+            
+        returns: a numpy array of same shape as input tensor containing the result
+            multiplying each element of tensor by scalar.
+        
+        Example:
+        if scalar.data is np.array([3.0]) and tensor.data is np.array([1.0, 2.0, 3.0])
+        then the return value should be np.array([3.0, 6.0, 9.0])'''
+
+        assert scalar.data.size == 1, "ScalarMultiply called with non-scalar input!"
+
+        ### YOUR CODE HERE ###
+
+        self.parents = [scalar, tensor]
+
+        return scalar.data * tensor.data
+
+    def backward_call(self, downstream_grad):
+
+        ### YOUR CODE HERE  ###
+
+        [scalar, tensor] = self.parents
+
+        # gradient of abcd with respect to b is acd
+        upstream_grads = [
+            np.sum(tensor.data * downstream_grad),
+            downstream_grad * scalar.data
+        ]
+
+        return upstream_grads
+
+
+
+class MatrixMultiply(Operation):
+    '''matrix multiplication operation.'''
+    def __init__(self):
+        super(MatrixMultiply, self).__init__(name="MatrixMultiply")
+
+    def forward_call(self, A, B):
+        '''
+        computes a matrix multiply forward pass.
+        args:
+            A: a 2-dimensional Tensor (i.e. a matrix) of shape (x, y)
+            B: a 2-dimensional Tensor of shape (y, z).
+            
+        returns:
+            a numpy array of shape (x, z) containing the matrix product of A
+            and B.'''
+        assert len(A.data.shape) == 2 and len(B.data.shape) == 2, \
+            "inputs to matrix multiply are not matrices! A shape: {}, B shape: {}".format(A.data.shape, B.data.shape)
+        
+        ### YOUR CODE HERE ###
+        self.parents = [A, B]
+
+        return np.dot(A.data, B.data)
+
+    def backward_call(self, downstream_grad):
+
+        ### YOUR CODE HERE ###
+        A = self.parents[0]
+        B = self.parents[1]
+        A_grad = np.dot(downstream_grad, np.transpose(B.data))
+        B_grad = np.dot(np.transpose(A.data), downstream_grad)
+        return [A_grad, B_grad]
+
+
+class HingeLoss(Operation):
+    '''compute hinge loss.
+    assumes input are a scores for a single example (no need to support
+    minibatches of scores).
+    
+    Input "scores" will be [1 x C] tensor representing scores for each of
+    C classes.
+    "label" is an integer in [0,..., C-1].
+    The multi-class hinge loss is given by the (unweighted) formula here:
+    https://pytorch.org/docs/stable/generated/torch.nn.MultiMarginLoss.html
+    
+    '''
+
+    def __init__(self, label):
+        super(HingeLoss, self).__init__(name="Hinge Loss")
+        self.label = label
+
+    def forward_call(self, scores):
+        '''
+        forward pass for Hinge Loss.
+        args:
+            scores: 1xC Tensor object containing scores for different classes.
+        returns:
+            float or shape (1) numpy array containing multiclass hinge loss.
+        '''
+
+        ### YOUR CODE HERE ###
+        self.parents = [scores]
+        value = np.sum(np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0))/len(scores.data)
+        self.value = value
+        return value
+
+    def backward_call(self, downstream_grad):
+        '''
+        backward pass for Hinge Loss.
+        args:
+            downstream_grad: shape (1) numpy array or float containing
+                downstream grad in backpropogation (gradient of final
+                output with respect to output of the hinge loss).
+        returns:
+            gradient of final output with respect to input scores of hinge loss.
+        '''
+
+        ### YOUR CODE HERE ###
+        [scores] = self.parents
+
+        over_margins = np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0) > 0.0
+
+        upstream_grad = np.zeros_like(scores.data)
+
+        upstream_grad[over_margins] = 1
+        upstream_grad[self.label] = -1 * (np.sum(over_margins) - 1.0)
+        upstream_grad /= len(over_margins)
+        upstream_grad *= downstream_grad
+
+        return [upstream_grad]
 
 class Power(Operation):
     '''raise to a power'''
@@ -132,6 +315,12 @@ class Maximum(Operation):
         super(Maximum, self).__init__(name="maximum")
 
     def forward_call(self, terms):
+        '''
+        args:
+            terms: a list of Tensor objects to compute maximum.
+        returns:
+            a numpy array whose ith coordinate is the maximum value of the
+            ith coordinate of all the Tensors in terms.'''
         self.parents = terms
         self.output = functools.reduce(
             lambda x, y: np.maximum(x, y), [t.data for t in terms])
@@ -176,105 +365,6 @@ class ReduceMax(Operation):
 
         mask = (A.data == self.output)
         return [mask * downstream_grad]
-
-
-class ScalarMultiply(Operation):
-    '''multiplication by a scalar.'''
-
-    def __init__(self):
-        super(ScalarMultiply, self).__init__(name="Scalar Multiply")
-
-    def forward_call(self, scalar, tensor):
-
-        assert scalar.data.size == 1, "ScalarMultiply called with non-scalar input!"
-
-        self.parents = [scalar, tensor]
-
-        return scalar.data * tensor.data
-
-    def backward_call(self, downstream_grad):
-
-        [scalar, tensor] = self.parents
-
-        # gradient of abcd with respect to b is acd
-        upstream_grads = [
-            np.sum(tensor.data * downstream_grad),
-            downstream_grad * scalar.data
-        ]
-
-        return upstream_grads
-
-
-class HingeLoss(Operation):
-    '''compute hinge loss.
-    assumes input are a scores for a single example (no need to support
-    minibatches of scores).
-    
-    Input "scores" will be [1 x C] tensor representing scores for each of
-    C classes.
-    "label" is an integer in [0,..., C-1].
-    The multi-class hinge loss is given by the (unweighted) formula here:
-    https://pytorch.org/docs/stable/generated/torch.nn.MultiMarginLoss.html
-    
-    '''
-
-    def __init__(self, label):
-        super(HingeLoss, self).__init__(name="Hinge Loss")
-        self.label = label
-
-    def forward_call(self, scores):
-        '''
-        forward pass for Hinge Loss.
-        args:
-            scores: 1xC Tensor object containing scores for different classes.
-        returns:
-            float or shape (1) numpy array containing multiclass hinge loss.
-        '''
-        self.parents = [scores]
-        value = np.sum(np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0))/len(scores.data)
-        self.value = value
-        return value
-
-    def backward_call(self, downstream_grad):
-        '''
-        backward pass for Hinge Loss.
-        args:
-            downstream_grad: shape (1) numpy array or float containing
-                downstream grad in backpropogation (gradient of final
-                output with respect to output of the hinge loss).
-        returns:
-            gradient of final output with respect to input scores of hinge loss.
-            '''
-        [scores] = self.parents
-
-        over_margins = np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0) > 0.0
-
-        upstream_grad = np.zeros_like(scores.data)
-
-        upstream_grad[over_margins] = 1
-        upstream_grad[self.label] = -1 * (np.sum(over_margins) - 1.0)
-        upstream_grad /= len(over_margins)
-        upstream_grad *= downstream_grad
-
-        return [upstream_grad]
-
-
-class MatrixMultiply(Operation):
-    def __init__(self):
-        super(MatrixMultiply, self).__init__(name="MatrixMultiply")
-
-    def forward_call(self, A, B):
-        self.parents = [A, B]
-
-        return np.dot(A.data, B.data)
-
-    def backward_call(self, downstream_grad):
-        A = self.parents[0]
-        B = self.parents[1]
-        A_grad = np.dot(downstream_grad, np.transpose(B.data))
-        B_grad = np.dot(np.transpose(A.data), downstream_grad)
-        return [A_grad, B_grad]
-
 
 
 ###### Helper functions for operator overloading ######

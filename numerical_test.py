@@ -111,6 +111,28 @@ class TestAutograd(unittest.TestCase):
         self._test_op(input_shapes, output_shape, reference_fn,
                       operation_fn, positive=False)
 
+    def test_mul_by_zero(self):
+
+        inputs = [Tensor([10.0, 0.0, 4.0]), Tensor([0.0, 2.0, 2.0])]
+        
+        mul = ops.TensorMultiply()
+
+        output = mul(inputs)
+
+        expected_output = np.array([0.0, 0.0, 8.0])
+        expected_grads = [np.array([0.0, 2.0, 2.0]), np.array([10.0, 0.0, 4.0])]
+
+        def relative_error(a, b):
+            diff = np.linalg.norm(a - b) / (1e-10 + np.linalg.norm(a + b))
+            return diff
+            
+        self.assertLessEqual(relative_error(output.data, expected_output), 1e-5)
+
+        output.backward()
+
+        self.assertLessEqual(relative_error(inputs[0].grad, expected_grads[0]), 1e-5)
+        self.assertLessEqual(relative_error(inputs[1].grad, expected_grads[1]), 1e-5)
+
     def test_overload_mul(self):
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)

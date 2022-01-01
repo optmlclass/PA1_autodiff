@@ -4,7 +4,10 @@ import numpy as np
 from tensor import Tensor
 
 class Operation(object):
-    '''Base class for operations'''
+    '''Base class for operations.
+    This is an abstract class: you should never work with objects of Operation
+    type. Instead, we subclass Operation to make specific computations in
+    ops_impl.py.'''
 
     def __init__(self, name):
 
@@ -13,8 +16,10 @@ class Operation(object):
         self.parents = None
         self.child = None
 
-        # flag for error-checking
+        # name string for printing error messages.
         self.name = name
+
+        # flag for error-checking
         self.forward_called = False
 
 
@@ -30,24 +35,40 @@ class Operation(object):
         return Tensor(data=output, parent=self)
 
     def backward(self, downstream_grad):
-        '''wrapper around backward_call to check assertion.'''
+        '''wrapper around backward_call to check assertion that forward was
+        called first.
 
+        After the forward pass, self.parents should contain a list of input
+        Tensors to this operation.
+        
+        This function calls backward_call to compute the gradients with respect
+        to the inputs of this operation such that the ith element of the
+        list of gradients corresponds to the ith element of self.parents,
+        and then passes those gradients on to the input Tensors in self.parents.
+        '''
+
+        # Error checking
         assert self.forward_called, "backward called before forward on {} operation!".format(
             self.name)
+
+        # Get upstream grads from operation-specific backward implementation
         upstream_grads = self.backward_call(downstream_grad)
+
+        ### YOUR CODE HERE ###
         for var, grad in zip(self.parents, upstream_grads):
             var.backward(grad)
 
     def backward_call(self, downstream_grad):
         '''Performs backward pass.
 
-        This function should also set self.gradients in such a way that
-        self.gradients[i] is the gradient of the final output of the computation
-        graph with respect to self.inputs[i].
+        This function should also return a list of gradients in such a way that
+        gradients[i] is the gradient of the final output of the computation
+        graph with respect to the ith input to forward, which are stored
+        in self.parents.
 
         Args:
             downstream_grad: gradient from downstream operation in the
-                computation graph. This package will only consider
+                computation graph. We will only consider
                 computation graphs that result in scalar outputs at the final
                 node (e.g. loss function computations). As a result,
                 the dimension of downstream_grad should match the dimension of the
@@ -90,5 +111,25 @@ class Operation(object):
             Args:
                 inputs: inputs to this operation.
             returns output of operation as a numpy array
+
+            This function should also store the list of inputs that the
+            backward pass will differentiate with respect to in the 
+            self.parents attribute.
+
+            So typically, if the arguments are a list L, then
+            self.parents should be set to L.
+            If the arguments are specified as individual Tensors (e.g. forward_call(X, Y, Z)),
+            then self.parents should be [X, Y, Z].
+            Note that using self.parents in this may not be the ONLY way to
+            organize the computation graph.
+            If you come up with a different method you are free to use it, but
+            make sure to set self.parents to some non-None value anyway to circumvent
+            some of the error checking in the forward function).
+
+            For example, an operation that subtracts two values might take two
+            inputs A and B. Then forward_call would store self.parents = [A, B],
+            while backward_call would return a list of gradients g such that
+            g[0] is the gradient with respect to self.parents[0], and g[1] is
+            the gradient with respect to self.parents[1].
             '''
             raise NotImplementedError
