@@ -1,8 +1,8 @@
-from .tensor import Tensor
-from . import ops_impl as ops
+from tensor import Tensor
+import ops_impl as ops
 import numpy as np
 import functools
-from .sgd import SGD
+from sgd import SGD
 from sklearn.datasets import fetch_openml
 
 # load mnist data:

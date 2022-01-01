@@ -1,5 +1,5 @@
-from .tensor import Tensor
-from . import ops_impl as ops
+from tensor import Tensor
+import ops_impl as ops
 import numpy as np
 import functools
 
@@ -164,6 +164,24 @@ class TestAutograd(unittest.TestCase):
         self._test_op(input_shapes, output_shape, reference_fn,
                       operation_fn, positive=False)
 
+    def test_add_uses_downstream(self):
+        input_shapes = [(2, 3), (2, 3), (2, 3)]
+        output_shape = (2, 3)
+
+        scaleFactor = 10.0
+
+        def reference_fn(args):
+            return scaleFactor * sum(args)
+
+        def operation_fn(args):
+            add = ops.TensorAdd()
+            
+            mul = ops.ScalarMultiply()
+            scaleFactorTensor = Tensor(scaleFactor)
+            return mul(scaleFactorTensor, add(args))
+        self._test_op(input_shapes, output_shape, reference_fn,
+                      operation_fn, positive=False)
+
     def test_matrix_multiply(self):
         input_shapes = [(4, 2), (2, 3)]
         output_shape = (4, 3)
@@ -282,6 +300,31 @@ class TestAutograd(unittest.TestCase):
             self._test_op(input_shapes, output_shape, reference_fn,
                         operation_fn, positive=False)
 
+    def test_hinge_uses_upstream(self):
+        input_shapes = [(10)]
+        output_shape = (1)
+
+        labels = [0, 3, 6]
+
+        scaleFactor = 10.0
+
+        def reference_fn_label(label, args):
+            return np.sum(np.maximum(args[0] - args[0][label] + 1.0, 0.0))/len(args[0])
+
+        reference_fns = [lambda args: scaleFactor * reference_fn_label(label, args) for label in labels]
+
+        def operation_fn_label(label, args):
+            hinge = ops.HingeLoss(label)
+            mul = ops.ScalarMultiply()
+            scaleFactorTensor = Tensor(scaleFactor)
+
+            return mul(scaleFactorTensor, hinge(args[0])) 
+        
+        operation_fns = [lambda args: operation_fn_label(label, args) for label in labels]
+
+        for operation_fn, reference_fn in zip(operation_fns, reference_fns):
+            self._test_op(input_shapes, output_shape, reference_fn,
+                        operation_fn, positive=False)
     def test_chained_ops(self):
         input_shapes = [(2, 3), (3, 4), (2, 4)]
         output_shape = (1)

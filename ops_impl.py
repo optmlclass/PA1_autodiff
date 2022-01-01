@@ -1,7 +1,7 @@
 import numpy as np
 import functools
-from .operation import Operation
-from .tensor import Tensor
+from operation import Operation
+from tensor import Tensor
 
 
 class TensorDot(Operation):
@@ -223,13 +223,28 @@ class HingeLoss(Operation):
         self.label = label
 
     def forward_call(self, scores):
-        
+        '''
+        forward pass for Hinge Loss.
+        args:
+            scores: 1xC Tensor object containing scores for different classes.
+        returns:
+            float or shape (1) numpy array containing multiclass hinge loss.
+        '''
         self.parents = [scores]
         value = np.sum(np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0))/len(scores.data)
         self.value = value
         return value
 
     def backward_call(self, downstream_grad):
+        '''
+        backward pass for Hinge Loss.
+        args:
+            downstream_grad: shape (1) numpy array or float containing
+                downstream grad in backpropogation (gradient of final
+                output with respect to output of the hinge loss).
+        returns:
+            gradient of final output with respect to input scores of hinge loss.
+            '''
         [scores] = self.parents
 
         over_margins = np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0) > 0.0
@@ -239,6 +254,7 @@ class HingeLoss(Operation):
         upstream_grad[over_margins] = 1
         upstream_grad[self.label] = -1 * (np.sum(over_margins) - 1.0)
         upstream_grad /= len(over_margins)
+        upstream_grad *= downstream_grad
 
         return [upstream_grad]
 
