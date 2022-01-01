@@ -1,7 +1,7 @@
 import numpy as np
 import functools
-from operation import Operation
-from tensor import Tensor
+from .operation import Operation
+from .tensor import Tensor
 
 
 class TensorDot(Operation):

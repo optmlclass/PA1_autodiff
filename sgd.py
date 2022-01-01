@@ -1,5 +1,5 @@
 '''SGD implementation'''
-from tensor import Tensor
+from .tensor import Tensor
 import numpy as np
 
 
