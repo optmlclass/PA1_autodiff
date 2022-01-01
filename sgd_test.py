@@ -56,7 +56,7 @@ def get_scores(features, params):
 def get_normal(shape):
     return np.random.normal(np.zeros(shape))
 
-def test_sgd(learning_rate, epochs, mnist):
+def train_mnist(learning_rate, epochs, mnist):
     running_accuracy = 0.0
     it = 0
 
@@ -81,5 +81,5 @@ def test_sgd(learning_rate, epochs, mnist):
 
 
 if __name__ == '__main__':
-    mnist = load_mnist()
-    test_sgd(0.01, 2, mnist)
+    mnist_data = load_mnist()
+    train_mnist(0.01, 2, mnist_data)
