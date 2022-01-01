@@ -208,7 +208,15 @@ class ScalarMultiply(Operation):
 class HingeLoss(Operation):
     '''compute hinge loss.
     assumes input are a scores for a single example (no need to support
-    minibatches of scores).'''
+    minibatches of scores).
+    
+    Input "scores" will be [1 x C] tensor representing scores for each of
+    C classes.
+    "label" is an integer in [0,..., C-1].
+    The multi-class hinge loss is given by the (unweighted) formula here:
+    https://pytorch.org/docs/stable/generated/torch.nn.MultiMarginLoss.html
+    
+    '''
 
     def __init__(self, label):
         super(HingeLoss, self).__init__(name="Hinge Loss")
@@ -222,8 +230,6 @@ class HingeLoss(Operation):
         return value
 
     def backward_call(self, downstream_grad):
-        # print("what")
-
         [scores] = self.parents
 
         over_margins = np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0) > 0.0

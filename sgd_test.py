@@ -40,7 +40,7 @@ def loss_fn(params, data):
     features, label = data
     features = Tensor(features)
 
-    scores = get_scores(features, params)#ops.matmul(weights, features) + bias
+    scores = get_scores(features, params)
 
     loss = ops.HingeLoss(label)(scores)
 
@@ -53,28 +53,19 @@ def get_scores(features, params):
     weights, bias = params
     return ops.matmul(weights, features) + bias
 
-    weights1, bias1, weights2, bias2, weights3, bias3 = params
-
-    act1 = ops.relu(ops.matmul(weights1, features) + bias1)
-
-    act2 = ops.relu(ops.matmul(weights2, act1) + bias2)
-
-    scores = ops.matmul(weights3, act2) + bias3
-
-    return scores
-
 def get_normal(shape):
     return np.random.normal(np.zeros(shape))
 
 def test_sgd(learning_rate, epochs, mnist):
     running_accuracy = 0.0
     it = 0
+
+    TRAINING_SIZE = 60000
+    TESTING_SIZE = 10000
+
     params = [Tensor(np.zeros((10, 784))), Tensor(np.zeros((10, 1)))]
-    # params1 = [Tensor(get_normal((100, 784))), Tensor(get_normal((100, 1)))]
-    # params2 = [Tensor(get_normal((50, 100))), Tensor(get_normal((50, 1)))]
-    # params3 = [Tensor(get_normal((10, 50))), Tensor(get_normal((10, 1)))]
-    # params = params1+params2+params3
-    for it in range(epochs*60000):
+
+    for it in range(epochs * TRAINING_SIZE):
         data = [mnist.data[it % 60000].reshape(-1, 1)/255.0, mnist.target[it % 60000]]
         params, correct = SGD(loss_fn, params, data, learning_rate)
         running_accuracy += (correct - running_accuracy)/(it + 1.0)
@@ -82,7 +73,7 @@ def test_sgd(learning_rate, epochs, mnist):
             print("it: {}, running train accuracy: {}".format(it+1, running_accuracy))
 
     running_accuracy = 0.0
-    for it in range(10000):
+    for it in range(TESTING_SIZE):
         data = [mnist.data[it + 60000].reshape(-1, 1)/255.0, mnist.target[it + 60000]]
         loss, correct = loss_fn(params, data)
         running_accuracy += (correct - running_accuracy)/(it + 1.0)
