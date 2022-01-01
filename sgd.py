@@ -8,12 +8,14 @@ def SGD(loss_fn, params, data, learning_rate):
     ''''performs an SGD update and returns updated parameters.
     arguments:
         loss_fn: function that takes params, data and returns a loss value.
-        params: list of tensors representing parameters of some model.
-        data: list of tensors representing minibatch data.
+        params: list of Tensors representing parameters of some model.
+        data: list of Tensors representing minibatch data.
         learning_rate: learning rate for SGD.
     returns:
-        next value for params after SGD update.
+        Tensor containing next value for params after SGD update.
     '''
+
+    ### YOUR CODE HERE ###
 
     loss_val, correct = loss_fn(params, data)
     loss_val.backward()

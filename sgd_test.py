@@ -10,10 +10,6 @@ def load_mnist():
     mnist = fetch_openml('mnist_784', data_home='./data', as_frame=False)
     mnist.target = np.array([int(t) for t in mnist.target])
     return mnist
-    mnist.target = np.array([int(t) for t in mnist.target])
-    mnist.target_one_hot = np.zeros((len(mnist.target), 10))
-    row_indices = np.arange(len(mnist.target))
-    mnist.target_one_hot[row_indices, mnist.target] = 1.0
 
 
 def loss_fn(params, data):
@@ -21,22 +17,22 @@ def loss_fn(params, data):
     
     args:
         params: list containing [weights, bias]
-            where weights is a 10x784 tensor and
-            bias is a scalar tensor.
+            where weights is a 10x784 Tensor and
+            bias is a scalar Tensor.
         data: list containing [features, label]
             where features is a 784 dimensional numpy array
             and label is an integer
         
     returns:
         loss, correct
-            where loss is a tensor representing the hinge loss
+            where loss is a Tensor representing the hinge loss
             of the 10-dimenaional scores where
             scores[i] = dot(weights[i] , features) + bias
-            and correct is 1.0 if scores[label] is the largest score
-            and zero otherwise.
+            and correct is a float that is 1.0 if scores[label] is the largest
+            score and 0.0 otherwise.
     '''
 
-    # weights, bias = params
+    ### YOUR CODE HERE ###
     features, label = data
     features = Tensor(features)
 
