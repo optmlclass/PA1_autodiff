@@ -43,8 +43,10 @@ class Variable(object):
         Variable so that the backpropogation can continue.
         '''
         # set a default value for downstream_grad.
-        # if the backward is called  on the output tensor and the output
+        # if the backward is called on the output Variable and the output
         # is a scalar, this will result in the standard gradient calculuation.
+        # Otherwise, it will have some weird behavior that we will not be
+        # concerned with.
         if downstream_grad is None:
             downstream_grad = np.ones_like(self.data)
 
@@ -53,10 +55,7 @@ class Variable(object):
 
 
         ### YOUR CODE HERE ###
-        self.grad += downstream_grad
-
-        if self.parent is not None:
-            self.parent.backward(downstream_grad)    
+        raise NotImplementedError 
 
 
 

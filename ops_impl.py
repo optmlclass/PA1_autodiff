@@ -67,8 +67,7 @@ class VariableAdd(Operation):
                 [summand.data.shape for summand in summands])
 
         ### YOUR CODE HERE ###
-        self.parents = summands
-        return functools.reduce(lambda x, y: x.data + y.data, summands)
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
         '''
@@ -81,8 +80,7 @@ class VariableAdd(Operation):
             of the input list to forward_call.'''
 
         ### YOUR CODE HERE ###
-
-        return [downstream_grad for _ in self.parents]
+        raise NotImplementedError
 
 class VariableMultiply(Operation):
     '''coordinate-wise multiply operation.'''
@@ -117,30 +115,14 @@ class VariableMultiply(Operation):
 
         ### YOUR CODE HERE ###
 
-        self.num_inputs = len(multiplicands)
-        self.output = functools.reduce(
-            lambda x, y: x.data*y.data, multiplicands)
-
-        self.parents = multiplicands
-
-        return self.output
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
 
 
         ### YOUR CODE HERE ###
 
-        # gradient of abcd with respect to b is acd
-        # cannot just do abcd/b because of potential divide by zero.
-        upstream_grads = []
-        for i in range(len(self.parents)):
-            product = downstream_grad
-            for j, multiplicand in enumerate(self.parents):
-                if i != j:
-                    product = product * multiplicand.data
-            upstream_grads.append(product)
-
-        return upstream_grads
+        raise NotImplementedError
 
 
 class ScalarMultiply(Operation):
@@ -167,23 +149,13 @@ class ScalarMultiply(Operation):
 
         ### YOUR CODE HERE ###
 
-        self.parents = [scalar, tensor]
-
-        return scalar.data * tensor.data
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
 
         ### YOUR CODE HERE  ###
 
-        [scalar, tensor] = self.parents
-
-        # gradient of abcd with respect to b is acd
-        upstream_grads = [
-            np.sum(tensor.data * downstream_grad),
-            downstream_grad * scalar.data
-        ]
-
-        return upstream_grads
+        raise NotImplementedError
 
 
 
@@ -206,18 +178,12 @@ class MatrixMultiply(Operation):
             "inputs to matrix multiply are not matrices! A shape: {}, B shape: {}".format(A.data.shape, B.data.shape)
         
         ### YOUR CODE HERE ###
-        self.parents = [A, B]
-
-        return np.dot(A.data, B.data)
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
 
         ### YOUR CODE HERE ###
-        A = self.parents[0]
-        B = self.parents[1]
-        A_grad = np.dot(downstream_grad, np.transpose(B.data))
-        B_grad = np.dot(np.transpose(A.data), downstream_grad)
-        return [A_grad, B_grad]
+        raise NotImplementedError
 
 
 class HingeLoss(Operation):
@@ -247,10 +213,7 @@ class HingeLoss(Operation):
         '''
 
         ### YOUR CODE HERE ###
-        self.parents = [scores]
-        value = np.sum(np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0))/len(scores.data)
-        self.value = value
-        return value
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
         '''
@@ -264,18 +227,7 @@ class HingeLoss(Operation):
         '''
 
         ### YOUR CODE HERE ###
-        [scores] = self.parents
-
-        over_margins = np.maximum(scores.data - scores.data[self.label] + 1.0, 0.0) > 0.0
-
-        upstream_grad = np.zeros_like(scores.data)
-
-        upstream_grad[over_margins] = 1
-        upstream_grad[self.label] = -1 * (np.sum(over_margins) - 1.0)
-        upstream_grad /= len(over_margins)
-        upstream_grad *= downstream_grad
-
-        return [upstream_grad]
+        raise NotImplementedError
 
 class Power(Operation):
     '''raise to a power'''

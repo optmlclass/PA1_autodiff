@@ -55,8 +55,7 @@ class Operation(object):
         upstream_grads = self.backward_call(downstream_grad)
 
         ### YOUR CODE HERE ###
-        for var, grad in zip(self.parents, upstream_grads):
-            var.backward(grad)
+        raise NotImplementedError
 
     def backward_call(self, downstream_grad):
         '''Performs backward pass.
