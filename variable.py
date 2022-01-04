@@ -1,9 +1,9 @@
-'''implements tensor class that wraps numpy arrays.'''
+'''implements Variable class that wraps numpy arrays.'''
 
 import numpy as np
 
-class Tensor(object):
-    '''Tensor class holds a numpy array an pointers for autodiff graph.'''
+class Variable(object):
+    '''Variable class holds a numpy array and pointers for autodiff graph.'''
 
     def __init__(self, data, parent=None):
 
@@ -40,7 +40,7 @@ class Tensor(object):
         Note that this is NOT accomplished by self.grad = downstream_grad!
 
         2. pass downstream_grad to the parent operations that created this
-        Tensor so that the backpropogation can continue.
+        Variable so that the backpropogation can continue.
         '''
         # set a default value for downstream_grad.
         # if the backward is called  on the output tensor and the output

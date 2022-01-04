@@ -1,9 +1,9 @@
-from tensor import Tensor
-import ops_impl as ops
-import numpy as np
 import functools
-
+import numpy as np
 import unittest
+
+import ops_impl as ops
+from variable import Variable
 
 
 def numerical_grad(inputs, downstream_grad, evaluate):
@@ -46,7 +46,7 @@ def test_backward_random(input_shapes, output_shape, reference_fn, operation_fn,
 
     numeric = numerical_grad(args, downstream_grad, reference_fn)
 
-    tensors = [Tensor(arg) for arg in args]
+    tensors = [Variable(arg) for arg in args]
     output = operation_fn(tensors)
     output.backward(downstream_grad)
 
@@ -60,7 +60,7 @@ def test_forward_random(input_shapes, reference_fn, operation_fn, positive=False
     args = [np.random.normal(size=shape) for shape in input_shapes]
     if positive:
         args = [np.abs(arg) for arg in args]
-    tensors = [Tensor(arg) for arg in args]
+    tensors = [Variable(arg) for arg in args]
     analytic = operation_fn(tensors).data
 
     reference = reference_fn(args)
@@ -79,7 +79,7 @@ class TestAutograd(unittest.TestCase):
             return sum(args)
 
         def operation_fn(args):
-            add = ops.TensorAdd()
+            add = ops.VariableAdd()
             return add(args)
         self._test_op(input_shapes, output_shape, reference_fn,
                       operation_fn, positive=False)
@@ -105,7 +105,7 @@ class TestAutograd(unittest.TestCase):
             return functools.reduce(lambda x, y: x*y, args)
 
         def operation_fn(args):
-            mul = ops.TensorMultiply()
+            mul = ops.VariableMultiply()
             return mul(args)
 
         self._test_op(input_shapes, output_shape, reference_fn,
@@ -113,9 +113,9 @@ class TestAutograd(unittest.TestCase):
 
     def test_mul_by_zero(self):
 
-        inputs = [Tensor([10.0, 0.0, 4.0]), Tensor([0.0, 2.0, 2.0])]
+        inputs = [Variable([10.0, 0.0, 4.0]), Variable([0.0, 2.0, 2.0])]
         
-        mul = ops.TensorMultiply()
+        mul = ops.VariableMultiply()
 
         output = mul(inputs)
 
@@ -196,11 +196,11 @@ class TestAutograd(unittest.TestCase):
             return scaleFactor * sum(args)
 
         def operation_fn(args):
-            add = ops.TensorAdd()
+            add = ops.VariableAdd()
             
             mul = ops.ScalarMultiply()
-            scaleFactorTensor = Tensor(scaleFactor)
-            return mul(scaleFactorTensor, add(args))
+            scaleFactorVariable = Variable(scaleFactor)
+            return mul(scaleFactorVariable, add(args))
         self._test_op(input_shapes, output_shape, reference_fn,
                       operation_fn, positive=False)
 
@@ -338,9 +338,9 @@ class TestAutograd(unittest.TestCase):
         def operation_fn_label(label, args):
             hinge = ops.HingeLoss(label)
             mul = ops.ScalarMultiply()
-            scaleFactorTensor = Tensor(scaleFactor)
+            scaleFactorVariable = Variable(scaleFactor)
 
-            return mul(scaleFactorTensor, hinge(args[0])) 
+            return mul(scaleFactorVariable, hinge(args[0])) 
         
         operation_fns = [lambda args: operation_fn_label(label, args) for label in labels]
 
@@ -357,7 +357,7 @@ class TestAutograd(unittest.TestCase):
         def operation_fn(args):
             matmul = ops.MatrixMultiply()
             exp = ops.Exp()
-            add = ops.TensorAdd()
+            add = ops.VariableAdd()
             reduce_max = ops.ReduceMax()
 
             return reduce_max(add([args[2], exp(matmul(args[0], args[1]))]))
@@ -373,7 +373,7 @@ class TestAutograd(unittest.TestCase):
             return args[0]*args[0]
 
         def operation_fn(args):
-            mul = ops.TensorMultiply()
+            mul = ops.VariableMultiply()
             return mul([args[0], args[0]])
 
         self._test_op(input_shapes, output_shape, reference_fn,
@@ -391,10 +391,10 @@ class TestAutograd(unittest.TestCase):
             return w
 
         def operation_fn(args):
-            mul1 = ops.TensorMultiply()
-            add1 = ops.TensorAdd()
-            mul2 = ops.TensorMultiply()
-            add3 = ops.TensorAdd()
+            mul1 = ops.VariableMultiply()
+            add1 = ops.VariableAdd()
+            mul2 = ops.VariableMultiply()
+            add3 = ops.VariableAdd()
 
             x = mul1([args[0], args[1]])
             y = add1([x, args[2]])
@@ -422,11 +422,11 @@ class TestAutograd(unittest.TestCase):
         def operation_fn(args):
             matmul1 = ops.MatrixMultiply()
             maximum = ops.Maximum()
-            mul = ops.TensorMultiply()
+            mul = ops.VariableMultiply()
             power = ops.Power(1.3)
-            add1 = ops.TensorAdd()
+            add1 = ops.VariableAdd()
             matmul2 = ops.MatrixMultiply()
-            add2 = ops.TensorAdd()
+            add2 = ops.VariableAdd()
 
             x = maximum([args[2], matmul1(args[0], args[1])])
             y = mul([x, x])

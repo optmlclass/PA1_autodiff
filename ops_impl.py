@@ -1,7 +1,9 @@
-import numpy as np
+'''provides  implementations of various operations, subclasses of Operation.'''
 import functools
+import numpy as np
+
 from operation import Operation
-from tensor import Tensor
+from variable import Variable
 
 
 class TensorDot(Operation):
@@ -34,19 +36,19 @@ class TensorDot(Operation):
         return [A_grad, B_grad]
 
 
-class TensorAdd(Operation):
+class VariableAdd(Operation):
     '''tensor addition operation.
-    given a list of Tensor objects with a common shape, adds them up.'''
+    given a list of Variable objects with a common shape, adds them up.'''
 
     def __init__(self):
-        super(TensorAdd, self).__init__(name="Add")
+        super(VariableAdd, self).__init__(name="Add")
 
     def forward_call(self, summands):
         '''summands should be a list of ndarrays, all with the same dimensions.
         args:
-            summands: list of Tensors all with same shape.
+            summands: list of Variables all with same shape.
         returns:
-            numpy array of same shape as input Tensors containing the sum
+            numpy array of same shape as input Variables containing the sum
             of the input tensors.
             
         Example: 
@@ -82,21 +84,21 @@ class TensorAdd(Operation):
 
         return [downstream_grad for _ in self.parents]
 
-class TensorMultiply(Operation):
+class VariableMultiply(Operation):
     '''coordinate-wise multiply operation.'''
 
     def __init__(self):
-        super(TensorMultiply, self).__init__(name="Multiply")
+        super(VariableMultiply, self).__init__(name="Multiply")
 
     def forward_call(self, multiplicands):
-        '''inputs should be a list of Tensors, all with the same dimensions.
+        '''inputs should be a list of Variables, all with the same dimensions.
         Like all forward_call implementations, this function should also
         set self.parents appriopriately.
         args:
-            multiplicands: list of Tensors all of same shape.
+            multiplicands: list of Variables all of same shape.
         returns:
-            a numpy array of the same shape as all the input Tensors that is
-            equal to all the Tensors multiplied together entry-wise.
+            a numpy array of the same shape as all the input Variables that is
+            equal to all the Variables multiplied together entry-wise.
         
         Example:
         if multiplicands = [A, B, C] where
@@ -151,8 +153,8 @@ class ScalarMultiply(Operation):
         '''
         multiplies a tensor by a scalar.
         args:
-            scalar: a Tensor of shape (1) (i.e. np.shape(scalar.data) is (1).
-            tensor: a Tensor of arbitrary shape.
+            scalar: a Variable of shape (1) (i.e. np.shape(scalar.data) is (1).
+            tensor: a Variable of arbitrary shape.
             
         returns: a numpy array of same shape as input tensor containing the result
             multiplying each element of tensor by scalar.
@@ -194,8 +196,8 @@ class MatrixMultiply(Operation):
         '''
         computes a matrix multiply forward pass.
         args:
-            A: a 2-dimensional Tensor (i.e. a matrix) of shape (x, y)
-            B: a 2-dimensional Tensor of shape (y, z).
+            A: a 2-dimensional Variable (i.e. a matrix) of shape (x, y)
+            B: a 2-dimensional Variable of shape (y, z).
             
         returns:
             a numpy array of shape (x, z) containing the matrix product of A
@@ -239,7 +241,7 @@ class HingeLoss(Operation):
         '''
         forward pass for Hinge Loss.
         args:
-            scores: 1xC Tensor object containing scores for different classes.
+            scores: 1xC Variable object containing scores for different classes.
         returns:
             float or shape (1) numpy array containing multiclass hinge loss.
         '''
@@ -317,10 +319,10 @@ class Maximum(Operation):
     def forward_call(self, terms):
         '''
         args:
-            terms: a list of Tensor objects to compute maximum.
+            terms: a list of Variable objects to compute maximum.
         returns:
             a numpy array whose ith coordinate is the maximum value of the
-            ith coordinate of all the Tensors in terms.'''
+            ith coordinate of all the Variables in terms.'''
         self.parents = terms
         self.output = functools.reduce(
             lambda x, y: np.maximum(x, y), [t.data for t in terms])
@@ -369,31 +371,31 @@ class ReduceMax(Operation):
 
 ###### Helper functions for operator overloading ######
 
-Tensor.__add__ = lambda self, other: TensorAdd()([self, other])
+Variable.__add__ = lambda self, other: VariableAdd()([self, other])
 
 def mul(self, other):
-    if not isinstance(other, Tensor):
-        other = Tensor(other)
+    if not isinstance(other, Variable):
+        other = Variable(other)
     if other.data.size == 1:
         return ScalarMultiply()(other, self)
     else:
-        return TensorMultiply()([self, other])
-Tensor.__mul__ = Tensor.__rmul__ = mul
+        return VariableMultiply()([self, other])
+Variable.__mul__ = Variable.__rmul__ = mul
 
-Tensor.__neg__ = lambda self: -1 * self
-Tensor.__sub__ = lambda self, other: self + (- other)
+Variable.__neg__ = lambda self: -1 * self
+Variable.__sub__ = lambda self, other: self + (- other)
 
 def div(A, B):
-    if not isinstance(B, Tensor):
-        B = Tensor(B)
+    if not isinstance(B, Variable):
+        B = Variable(B)
     B_inverse = Power(-1.0)(B)
     if B.data.size == 1:
         return ScalarMultiply()(B_inverse, A)
     else:
-        return TensorMultiply()([A, B_inverse])
+        return VariableMultiply()([A, B_inverse])
 
-Tensor.__truediv__ = div
-Tensor.__rtruediv__ = lambda self, other: div(other, self)
+Variable.__truediv__ = div
+Variable.__rtruediv__ = lambda self, other: div(other, self)
 
 
 ###### Helper functions for applying operations ######

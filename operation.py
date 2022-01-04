@@ -1,7 +1,7 @@
-
+'''implements Operation class for autodiff.'''
 import numpy as np
 
-from tensor import Tensor
+from variable import Variable
 
 class Operation(object):
     '''Base class for operations.
@@ -12,7 +12,7 @@ class Operation(object):
     def __init__(self, name):
 
         # list of input tensors to this operation, and output tensor.
-        # All inputs and outputs be Tensor objects.
+        # All inputs and outputs be Variable objects.
         self.parents = None
         self.child = None
 
@@ -32,19 +32,19 @@ class Operation(object):
         output = self.forward_call(*args, **kwargs)
         assert self.parents is not None, "forward did not set self.parents on {} operation! Inputs: args: {}, kwargs: {}. self.parents: {}".format(
             self.name, args, kwargs, self.parents)
-        return Tensor(data=output, parent=self)
+        return Variable(data=output, parent=self)
 
     def backward(self, downstream_grad):
         '''wrapper around backward_call to check assertion that forward was
         called first.
 
         After the forward pass, self.parents should contain a list of input
-        Tensors to this operation.
+        Variables to this operation.
         
         This function calls backward_call to compute the gradients with respect
         to the inputs of this operation such that the ith element of the
         list of gradients corresponds to the ith element of self.parents,
-        and then passes those gradients on to the input Tensors in self.parents.
+        and then passes those gradients on to the input Variables in self.parents.
         '''
 
         # Error checking
@@ -118,7 +118,7 @@ class Operation(object):
 
             So typically, if the arguments are a list L, then
             self.parents should be set to L.
-            If the arguments are specified as individual Tensors (e.g. forward_call(X, Y, Z)),
+            If the arguments are specified as individual Variables (e.g. forward_call(X, Y, Z)),
             then self.parents should be [X, Y, Z].
             Note that using self.parents in this may not be the ONLY way to
             organize the computation graph.
