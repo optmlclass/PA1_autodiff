@@ -9,10 +9,10 @@ before diving in!
 You need to write code to finish functions in the files listed below.
 Check the docstring below each function definition for a description of what
 the function should accomplish.
-Note that some of the "backward_call" and "forward_call" methods do not  have
+Note that some of the `backward_call` and `forward_call` methods do not  have
 docstrings. For these, check docstrings for their class definition to see
 what the relevant operation is computing, and check the docstrings in the 
-Variable and Operation classes to see overall how these functions should work.
+`Variable` and `Operation` classes to see overall how these functions should work.
 
 This starter code assumes that the final output of any computation graph is a 
 scalar so that the total derivative is actually a gradient. As a result, the
@@ -21,26 +21,26 @@ word "gradient" or "grad" is used in variable names rather than "derivative".
 
 
 operation.py:
-finish the "backward" function.
+finish the `backward` function.
 
 variable.py:
-finish the "backward" function.
+finish the `backward` function.
 
 ops_imply.py:
-finish the "forward_call" and "backward_call" functions in the following classes:
-- VariableAdd
-- VariableMultiply
-- ScalarMultiply
-- MatrixMultiply
-- HingeLoss
+finish the `forward_call` and `backward_call` functions in the following classes:
+- `VariableAdd`
+- `VariableMultiply`
+- `ScalarMultiply`
+- `MatrixMultiply`
+- `HingeLoss`
 
-The other Operation implementations in this file are there to provide examples.
+The other `Operation` implementations in this file are there to provide examples.
 
 sgd.py:
-write the function "SGD".
+write the function `SGD`.
 
 sgd_test.py:
-write the function "loss_fn".
+write the function `loss_fn`.
 
 
 ## Setting up your environment (assumes python3 is already installed)
@@ -110,7 +110,7 @@ user    0m55.799s
 sys     0m1.539s
 ```
 Although you may certainly make arbitrary changes when debugging, your submission should not
-edit `sgd_test.py` except for the point marked "YOUR CODE HERE".
+edit sgd_test.py except for the point marked "YOUR CODE HERE".
 
 
 
