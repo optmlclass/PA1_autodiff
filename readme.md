@@ -84,6 +84,8 @@ Ran 21 tests in 0.048s
 OK
 ```
 
+Each test is worth 2 points, for a total of 44 points from the automated tests.
+
 For reference, before writing any code, the automated tests should output:
 ```
 $ python3 numerical_test.py 
@@ -161,6 +163,8 @@ sys     0m1.539s
 ```
 Although you may certainly make arbitrary changes when debugging, your submission should not
 edit sgd_test.py except for the point marked "YOUR CODE HERE".
+
+A correct SGD implementation is worth 6 points, for a total of 50 points possible on this assignment.
 
 
 
