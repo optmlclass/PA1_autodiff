@@ -8,7 +8,10 @@ before diving in!
 
 You need to write code to finish functions in the files listed below.
 Check the docstring below each function definition for a description of what
-the function should accomplish.
+the function should accomplish  (a "docstring" in python is a long comment
+wrapped in triple-quotes (''') at the top of a file, class or function
+declaration that describes what the  file, class or function does. They
+are used by some automatic documentation tools).
 Note that some of the `backward_call` and `forward_call` methods do not  have
 docstrings. For these, check docstrings for their class definition to see
 what the relevant operation is computing, and check the docstrings in the 
@@ -68,8 +71,8 @@ python3 numerical_test.py
 ```
 This file will compare your automatic differentiation results to the slower
 numerical differentiation baseline. You are encouraged to read the tests, and 
-potentially make copies for debugging your code. However, the submission MUST NOT
-modify this file.
+potentially make copies and changes for debugging your code. However, the 
+submission MUST NOT modify this file.
 
 Our solution implementation produces the following output on a 2016 macbook pro:
 ```
@@ -79,6 +82,53 @@ $ python3 numerical_test.py
 Ran 21 tests in 0.048s
 
 OK
+```
+
+For reference, before writing any code, the automated tests should output:
+```
+$ python3 numerical_test.py 
+EEEEEEEEEEEEEEEEEEEEE
+======================================================================
+ERROR: test_add (__main__.TestAutograd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 108, in test_add
+    self._test_op(input_shapes, output_shape, reference_fn,
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 468, in _test_op
+    forward_diff = test_forward_random(
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 88, in test_forward_random
+    analytic = operation_fn(tensors).data
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 107, in operation_fn
+    return add(args)
+  File "/Users/ashok/Projects/ec500hw/spring2022/operation.py", line 27, in __call__
+    return self.forward(*args, **kwargs)
+  File "/Users/ashok/Projects/ec500hw/spring2022/operation.py", line 32, in forward
+    output = self.forward_call(*args, **kwargs)
+  File "/Users/ashok/Projects/ec500hw/spring2022/ops_impl.py", line 70, in forward_call
+    raise NotImplementedError
+NotImplementedError
+
+~~~~~~~~~~ many more error messages printed here ~~~~~~~~~~~~
+
+
+======================================================================
+ERROR: test_tensordot (__main__.TestAutograd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 254, in test_tensordot
+    self._test_op(input_shapes, output_shape, reference_fn,
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 472, in _test_op
+    backward_diff = test_backward_random(
+  File "/Users/ashok/Projects/ec500hw/spring2022/numerical_test.py", line 75, in test_backward_random
+    output.backward(downstream_grad)
+  File "/Users/ashok/Projects/ec500hw/spring2022/variable.py", line 58, in backward
+    raise NotImplementedError
+NotImplementedError
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.017s
+
+FAILED (errors=21)
 ```
 
 It is strongly recommended that you pass these tests BEFORE attempting to implement SGD.
