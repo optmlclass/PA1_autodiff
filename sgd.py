@@ -21,6 +21,13 @@ def SGD(loss_fn, params, data, learning_rate):
 
     raise NotImplementedError
 
+
+    # Depending on your solution, you may need to uncomment the lines below for
+    # it to run efficiently. If your solution requires this, make sure you
+    # understand why!
+    # for param in new_params:
+    #     param.detach()
+
     return new_params, correct
 
 
