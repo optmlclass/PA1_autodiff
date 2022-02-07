@@ -160,7 +160,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
 
-    def test_overload_sub(self):
+    def test_overload_div(self):
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
