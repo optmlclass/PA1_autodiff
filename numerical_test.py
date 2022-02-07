@@ -39,10 +39,37 @@ def numerical_grad(inputs, downstream_grad, evaluate):
 
 
 def test_backward_random(input_shapes, output_shape, reference_fn, operation_fn, positive=False):
+    '''tests whether the automatic differentiation of operation_fn is correct.
+    Args:
+        input_shapes: list of shapes for input Variables or np.arrays to the
+            functions we are differentiating.
+        output_shape: shape of output for the function we are differentiating.
+        reference_fn: function that takes a list of np.arrays with shapes
+            listed in input_shapes and returns an np.array of shape output_shape.
+            This function is a "normal implementation" of the function we 
+            are going to differentiate.
+        operation_fn: function that takes a list of Variable objects with
+            shapes listed in input_shapes and returns a Variable object with
+            shape output_shape. The return value of this function should be
+            one for which .backward will give us derivatives with respect
+            to the  inputs.
+        positive: if true, then the functions must take inputs whose coordinates
+            are all positive.
+        
+    Returns:
+        diff: a difference between an analytical and numerical derivative.
+            
+        Note that since we limit our autograd machinery to  computing gradients
+        rather than general total derivatives, we need to provide a
+        a "downstream_grad" to the .backward call. We just set this to be
+        a random vector.
+        
+        The inputs to the functions are also picked as random vectors.
+        '''
     args = [np.random.normal(size=shape) for shape in input_shapes]
     if positive:
         args = [np.abs(arg) for arg in args]
-    downstream_grad = np.ones(output_shape)
+    downstream_grad = np.random.normal(size=output_shape)
 
     numeric = numerical_grad(args, downstream_grad, reference_fn)
 
@@ -57,6 +84,27 @@ def test_backward_random(input_shapes, output_shape, reference_fn, operation_fn,
 
 
 def test_forward_random(input_shapes, reference_fn, operation_fn, positive=False):
+    '''tests whether the "forward" computation is correct (i.e. do you actually
+    compute the right  thing).
+    
+    Args:
+        input_shapes: list of shapes for input Variables or np.arrays to the 
+            functions we are testing.
+        output_shape: output shape for the function we are testing.
+        reference_fn: function that takes a list of np.arrays with shapes
+            listed in input_shapes and returns an np.array of shape output_shape.
+            This function is the "normal implementation" of the function we are
+            testing.
+        operation_fn: function built out of "operations" that takes Variable
+            objects with shapes specified in input_shapes and outputs a 
+            Variable with shape output_shape. This function should represent
+            the same computation as reference_fn, but will keep track of the
+            computational graph in order to do automatic differentation.
+        positive: if true, the the functions must take inputs whose coordinates
+            are all positive.
+    Returns:
+        diff: relative difference between the output of the reference_fn
+            and the forward pass on the operation_fn.'''
     args = [np.random.normal(size=shape) for shape in input_shapes]
     if positive:
         args = [np.abs(arg) for arg in args]
@@ -71,7 +119,28 @@ def test_forward_random(input_shapes, reference_fn, operation_fn, positive=False
 
 class TestAutograd(unittest.TestCase):
 
+    def _test_op(self, input_shapes, output_shape, reference_fn, operation_fn, positive=False):
+        '''tests the forward and backward pass of an operation.
+        Args:
+            see descriptions for test_forward_random or test_backward_random
+        Returns:
+            None
+            
+        This  function simply calls test_forward_random and test_backward_random
+        and throws an error if either of them return a significant amount of
+        difference between the forward pass and gradients computed via the
+        automatic differentation  code and via the reference numpy with numerical
+        differentation procedure.'''
+        forward_diff = test_forward_random(
+            input_shapes, reference_fn, operation_fn, positive=positive)
+        self.assertLessEqual(forward_diff, 1e-5)
+
+        backward_diff = test_backward_random(
+            input_shapes, output_shape, reference_fn, operation_fn, positive=positive)
+        self.assertLessEqual(backward_diff, 1e-5)
+
     def test_add(self):
+        '''tests the VariableAdd operation'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -86,6 +155,9 @@ class TestAutograd(unittest.TestCase):
 
 
     def test_overload_add(self):
+        '''tests whether the operator overloading that replaces
+        X + Y with a VariableAdd operation works properly.
+        This will likely pass as soon as test_add passes.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -98,6 +170,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_mul(self):
+        '''tests VariableMultiply operation.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -112,6 +185,9 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_mul_by_zero(self):
+        '''tests VariableMultiply in the special case that some components
+        are zero  (catches potential divide-by-zero errors in the backward
+        pass).'''
 
         inputs = [Variable([10.0, 0.0, 4.0]), Variable([0.0, 2.0, 2.0])]
         
@@ -134,6 +210,9 @@ class TestAutograd(unittest.TestCase):
         self.assertLessEqual(relative_error(inputs[1].grad, expected_grads[1]), 1e-5)
 
     def test_overload_mul(self):
+        '''tests whether operator overloading for multiplication in which
+        A * B  is replaced with a VariableMultiply operation  works.
+        Will likely pass as soon as test_mul passes.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -147,6 +226,8 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_overload_sub(self):
+        '''tests operator overloading of subtraction. Will likely pass
+        as soon as test_mul and test_add both pass.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -160,7 +241,9 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
 
-    def test_overload_sub(self):
+    def test_overload_div(self):
+        '''tests operator overloading for division. Will likely pass
+        as soon as test_mul passes.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -174,6 +257,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_scalar_multiply(self):
+        '''tests  ScalarMultiply operation.'''
         input_shapes = [(1), (2, 3)]
         output_shape = (2, 3)
 
@@ -187,6 +271,8 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_add_uses_downstream(self):
+        '''Checks that .backward implementation in VariableAdd actually
+        uses the downstream_grad argument properly.'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -205,6 +291,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_matrix_multiply(self):
+        '''tests MatrixMultiply operation'''
         input_shapes = [(4, 2), (2, 3)]
         output_shape = (4, 3)
 
@@ -218,6 +305,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_tensordot(self):
+        '''tests TensorDot operation'''
         input_shapes = [(2, 4, 2, 6), (2, 6, 3)]
         output_shape = (2, 4, 3)
 
@@ -231,6 +319,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_exponent(self):
+        '''tests Exp operation'''
         input_shapes = [(2, 3, 4)]
         output_shape = (2, 3, 4)
 
@@ -245,6 +334,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_power(self):
+        '''tests Power operation'''
         input_shapes = [(2, 3, 4)]
         output_shape = (2, 3, 4)
 
@@ -259,6 +349,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=True)
 
     def test_maximum(self):
+        '''tests Maximum operation'''
         input_shapes = [(2, 3), (2, 3), (2, 3)]
         output_shape = (2, 3)
 
@@ -274,6 +365,7 @@ class TestAutograd(unittest.TestCase):
 
 
     def test_relu(self):
+        '''tests ReLU operation'''
         input_shapes = [(2, 5)]
         output_shape = (2, 5)
 
@@ -288,6 +380,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_reduce_max(self):
+        '''tests ReduceMax operation'''
         input_shapes = [(2, 3, 4)]
         output_shape = (1)
 
@@ -302,6 +395,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_hinge_loss(self):
+        '''tests HingeLoss operation'''
         input_shapes = [(10)]
         output_shape = (1)
 
@@ -322,7 +416,8 @@ class TestAutograd(unittest.TestCase):
             self._test_op(input_shapes, output_shape, reference_fn,
                         operation_fn, positive=False)
 
-    def test_hinge_uses_upstream(self):
+    def test_hinge_uses_downtream(self):
+        '''makes sure that HingeLoss uses the downstream gradient properly.'''
         input_shapes = [(10)]
         output_shape = (1)
 
@@ -347,7 +442,9 @@ class TestAutograd(unittest.TestCase):
         for operation_fn, reference_fn in zip(operation_fns, reference_fns):
             self._test_op(input_shapes, output_shape, reference_fn,
                         operation_fn, positive=False)
+
     def test_chained_ops(self):
+        '''tests chaining together several operations.'''
         input_shapes = [(2, 3), (3, 4), (2, 4)]
         output_shape = (1)
 
@@ -366,6 +463,8 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_reuse_vars(self):
+        '''tests ability to reuse a Variable as input to multiple
+        operations in the same graph.'''
         input_shapes = [(2, 3)]
         output_shape = (2, 3)
 
@@ -380,6 +479,8 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_graph(self):
+        '''tests a more complicated graph with several operations
+        and variable reuse.'''
         input_shapes = [(1), (1), (1)]
         output_shape = (1)
 
@@ -407,6 +508,7 @@ class TestAutograd(unittest.TestCase):
                       operation_fn, positive=False)
 
     def test_large_graph(self):
+        '''tests an even large computation graph.'''
         input_shapes = [(2, 3), (3, 4), (2, 4), (2, 4), (4, 3)]
         output_shape = (2, 3)
 
@@ -436,18 +538,6 @@ class TestAutograd(unittest.TestCase):
             b = add2([args[0], a])
 
             return b
-
-        self._test_op(input_shapes, output_shape, reference_fn,
-                      operation_fn, positive=False)
-
-    def _test_op(self, input_shapes, output_shape, reference_fn, operation_fn, positive=False):
-        forward_diff = test_forward_random(
-            input_shapes, reference_fn, operation_fn, positive=positive)
-        self.assertLessEqual(forward_diff, 1e-5)
-
-        backward_diff = test_backward_random(
-            input_shapes, output_shape, reference_fn, operation_fn, positive=positive)
-        self.assertLessEqual(backward_diff, 1e-5)
 
 
 if __name__ == '__main__':
