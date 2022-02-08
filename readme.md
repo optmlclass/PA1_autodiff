@@ -84,7 +84,7 @@ Our solution implementation produces the following output on a 2016 macbook pro:
 $ python3 numerical_test.py 
 .....................
 ----------------------------------------------------------------------
-Ran 21 tests in 0.048s
+Ran 22 tests in 0.048s
 
 OK
 ```
@@ -133,7 +133,7 @@ Traceback (most recent call last):
 NotImplementedError
 
 ----------------------------------------------------------------------
-Ran 21 tests in 0.017s
+Ran 22 tests in 0.017s
 
 FAILED (errors=21)
 ```
