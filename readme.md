@@ -4,6 +4,11 @@ Note: this assignment is complicated! Do not start it at the last minute! You ma
 want to read over the code to get an understanding of what you should be doing
 before diving in!
 
+## Submission
+
+Please submit your assignment by emailing a zip or tar file containing all source code to
+optmlclass.spring.2022+PA1@gmail.com. Make sure to incude your name and PA1 in the subject line.
+
 ## Instructions
 
 You need to write code to finish functions in the files listed below.
