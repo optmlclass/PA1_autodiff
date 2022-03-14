@@ -32,6 +32,13 @@ class Operation(object):
         output = self.forward_call(*args, **kwargs)
         assert self.parents is not None, "forward did not set self.parents on {} operation! Inputs: args: {}, kwargs: {}. self.parents: {}".format(
             self.name, args, kwargs, self.parents)
+        
+        ## UPDATED - not required for assignment solution!
+        for parent in self.parents:
+            parent.is_leaf = False
+            parent.children_without_grad += 1
+        ##
+
         return Variable(data=output, parent=self)
 
     def backward(self, downstream_grad):

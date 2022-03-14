@@ -440,6 +440,37 @@ class TestAutograd(unittest.TestCase):
         self._test_op(input_shapes, output_shape, reference_fn,
                       operation_fn, positive=False)
 
+
+    ### New test that deals with long branched graphs
+    def test_long_graph(self):
+        input_shapes = [(1)]
+        output_shape = (1)
+
+        length = 100
+
+        def reference_fn(args):
+            x = args[0]
+            for _ in range(length):
+                a = x**2
+                b = x**-1
+                x = a*b
+            return x
+
+        def operation_fn(args):
+            x = args[0]
+            for _ in range(length):
+                square = ops.Power(exponent=2)
+                invert = ops.Power(exponent=-1)
+                multiply = ops.ScalarMultiply()
+                a = square(x)
+                b = invert(x)
+                x = multiply(a, b)
+
+            return x
+
+        self._test_op(input_shapes, output_shape, reference_fn,
+                      operation_fn, positive=False)   
+
     def _test_op(self, input_shapes, output_shape, reference_fn, operation_fn, positive=False):
         forward_diff = test_forward_random(
             input_shapes, reference_fn, operation_fn, positive=positive)

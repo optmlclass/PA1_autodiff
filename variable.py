@@ -18,6 +18,11 @@ class Variable(object):
         # set up backward pointer for the computation graph
         self.parent = parent
 
+        ## UPDATED - NOT NECESSARY FOR ASSIGNMENT
+        self.is_leaf = True
+        self.children_without_grad = 0
+        ##
+
         self.grad = None
 
     def detach(self):
@@ -54,6 +59,24 @@ class Variable(object):
 
         ### YOUR CODE HERE ###
         self.grad += downstream_grad
+        
+
+        ## UPDATED - not required for assignment!
+        if self.is_leaf:
+            self.parent.backward(self.grad)
+            return
+        
+        self.children_without_grad -= 1
+        assert self.children_without_grad >= 0, "excessive backward calls through a variable!"
+        if self.children_without_grad == 0:
+            if self.parent is not None:
+                self.parent.backward(self.grad)
+            return
+        else:
+            return
+        ## Following code is unreachable, but this update block can be removed to produce a 
+        ## correct but slower implementation.
+
 
         if self.parent is not None:
             self.parent.backward(downstream_grad)    
